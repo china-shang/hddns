@@ -1,0 +1,28 @@
+#!/bin/sh
+# Start/stop the cron daemon.
+#
+### BEGIN INIT INFO
+# Provides:          cron
+# Required-Start:    $remote_fs $syslog $time
+# Required-Stop:     $remote_fs $syslog $time
+# Should-Start:      $network $named slapd autofs ypbind nscd nslcd winbind
+# Should-Stop:       $network $named slapd autofs ypbind nscd nslcd winbind
+# Default-Start:     2 3 4 5
+# Default-Stop:
+# Short-Description: Regular background program processing daemon
+# Description:       cron is a standard UNIX program that runs user-specified 
+#                    programs at periodic scheduled times. vixie cron adds a 
+#                    number of features to the basic UNIX cron, including better
+#                    security and more powerful configuration options.
+### END INIT INFO
+
+case "$1" in 
+    start) date >>/home/zh/ddns.log
+        echo 'update records' >>/home/zh/ddns.log
+        python3 /home/zh/ddns/main.py -update >>/tmp/ddns.log
+        ;;
+    stop) date >>/home/zh/ddns.log 
+        echo 'delete records' >>/home/zh/ddns.log
+        python3 /home/zh/ddns/main.py -delete >>/tmp/ddns.log
+        ;;
+esac
