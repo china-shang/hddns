@@ -1,11 +1,18 @@
 
 {
-    "key":"",
-    "secret": "",
+    "key":"LN5DRBP8UMNZFWWLMIN4",
+    "secret": "5haCOvX8Cz7aqKVqdNg4E24wQIbqmqJobYMILO1g",
 
-    "names": [
-        "h.huazhang.me"
+    "v4": [
+        "win.huazhang.online",
+        "local.huazhang.online",
+        "game.huazhang.online"
+    ],
+    "v6": [
+        "win.huazhang.online",
+        "local.huazhang.online",
+        "game.huazhang.online"
     ],
     "weight": 1,
-    "description": "h"
+    "description": "h_auto_"
 }

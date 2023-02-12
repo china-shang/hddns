@@ -10,13 +10,18 @@ import json
 from socket import socket, AF_INET, SOCK_DGRAM
 import argparse
 
+import os
 
-Key = 'D9DWPJA0QJQERLJI3RQK'
-Secret = 'YbZ488oym5tG2ZZdfMvScZee8mCRUzclwsN0opIV'
+
+Key = '----in file'
+Secret = ''
 EndPoint = 'dns.cn-north-4.myhuaweicloud.com'
 
 CONFIG = {
-    "names": [
+    "v4": [
+        'h.huazhang.me',
+    ],
+    "v6": [
         'h.huazhang.me',
     ],
     'weight': 1,
@@ -26,6 +31,7 @@ CONFIG = {
 
 class Api():
     def __init__(self, key=Key, secret=Secret, end_point=EndPoint):
+        print("--key:" + key)
         self._key = key
         self._secret = secret
         self._end_point = end_point
@@ -94,43 +100,47 @@ class Api():
                 return await resp.json()
 
 
-async def get_ip(url='http://v4.ipv6-test.com/api/myip.php'):
+async def get_ip(v=4):
+    if v == 4:
+        url = 'http://v4.ipv6-test.com/api/myip.php'
+    elif v == 6:
+        url = 'http://v6.ipv6-test.com/api/myip.php'
     async with ClientSession() as session:
         session: ClientSession
         async with session.get(url) as resp:
             return await resp.text()
 
 
-async def add_record(name, description='', weight=1):
-    ip = await get_ip()
+async def add_record(api, name, description='', weight=1, v=4):
+    ip = await get_ip(v)
     print(ip)
-    api = Api()
     data = await api.get('zones', version='v2', type='public')
     zone_id = data['zones'][0]['id']
-
+    _type = 'A'
+    if v == 6:
+        _type = 'AAAA'
     record_data = {
         'name': name,
         'description': description,
-        'type': 'A',
+        'type': _type,
         'ttl': 120,
         'weight': weight,
         'records': [
             ip
         ]
     }
+    print(record_data)
     data = await api.post(url=f'zones/{zone_id}/recordsets', data=record_data)
     if not data.get('id', None):
         raise Exception('add fail')
     return data
 
-
-async def del_records(**query):
+async def del_records(api,**query):
     if not query:
         return
     if 'name' in query and not query['name'].endswith('.'):
         query['name'] = f'{query["name"]}.'
 
-    api = Api()
     data = await api.get('zones', version='v2', type='public')
     zone_id = data['zones'][0]['id']
 
@@ -152,11 +162,10 @@ async def del_records(**query):
 
 
 def load_config(config_path):
+    print(config_path)
     with open(config_path) as fp:
         config = json.load(fp)
     return config
-
-
 async def run(args):
     config = load_config(args.config)
     api = Api(key=config['key'], secret=config['secret'])
@@ -164,10 +173,17 @@ async def run(args):
     # print(data)
 
     if args.put:
-        for name in config['names']:
+        for name in config['v4']:
             try:
                 print(f'adding {name}')
-                await add_record(name, config['description'], config['weight'])
+                await add_record(api, name, config['description'], config['weight'])
+                print(f'add success {config["description"]}')
+            except Exception as e:
+                print(f'error {e}')
+        for name in config['v6']:
+            try:
+                print(f'adding ipv6 {name}')
+                await add_record(api, name, config['description'], config['weight'], v=6)
                 print(f'add success {config["description"]}')
             except Exception as e:
                 print(f'error {e}')
@@ -175,7 +191,7 @@ async def run(args):
     if args.delete:
         try:
             print(f'deleting')
-            data = await del_records(description=config['description'])
+            data = await del_records(api, description=config['description'])
             print(f'delete success {config["description"]}')
         except Exception as e:
             print(f'error {e}')
@@ -184,15 +200,22 @@ async def run(args):
         print(f'updating {config["description"]}')
         try:
             print(f'deleting {config["description"]}')
-            data = await del_records(description=config['description'])
+            data = await del_records(api, description=config['description'])
             print(f'delete success {config["description"]}')
         except Exception as e:
             print(f'error {e}')
 
-        for name in config['names']:
+        for name in config['v4']:
             try:
                 print(f'add {name}')
-                await add_record(name, config['description'], config['weight'])
+                await add_record(api, name, config['description'], config['weight'])
+                print(f'add success {config["description"]}')
+            except Exception as e:
+                print(f'error {e}')
+        for name in config['v6']:
+            try:
+                print(f'add ipv6 {name}')
+                await add_record(api, name, config['description'], config['weight'], v=6)
                 print(f'add success {config["description"]}')
             except Exception as e:
                 print(f'error {e}')
